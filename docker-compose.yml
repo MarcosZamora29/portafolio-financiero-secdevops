@@ -1,0 +1,46 @@
+version: "3.8"
+
+services:
+
+  # ─────────────────────────────
+  # BASE DE DATOS MySQL
+  # ─────────────────────────────
+  db:
+    image: mysql:8.0
+    container_name: portafolio_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: portafolio_financiero
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppass
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./portfolio_db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uappuser", "-papppass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────
+  # BACKEND Flask
+  # ─────────────────────────────
+  backend:
+    build: .
+    container_name: portafolio_backend
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+
+volumes:
+  db_data:
