@@ -33,8 +33,8 @@ pip install flask flask-cors mysql-connector-python bcrypt
 ```python
 DB_CONFIG = {
     "host":     "localhost",
-    "user":     "root",      # ← Tu usuario MySQL
-    "password": "",          # ← Tu contraseña MySQL
+    "user":     "root",      
+    "password": "",
     "database": "portafolio_financiero",
     "port":     3306
 }
@@ -50,19 +50,11 @@ Backend disponible en: http://localhost:5000
 
 ## PASO 3 — FRONTEND
 
-### Opción A — VS Code Live Server (recomendado):
+- VS Code Live Server (recomendado):
 1. Instala la extensión "Live Server" en VS Code
 2. Click derecho en `index.html` → "Open with Live Server"
 3. Se abre en http://127.0.0.1:5500
 
-### Opción B — Abrir directamente:
-- Doble clic en `index.html`
-
----
-
-## USUARIO DEMO
-- Email:    demo@portafolio.com
-- Password: demo1234
 
 ---
 
