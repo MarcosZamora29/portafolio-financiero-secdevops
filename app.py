@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
+from flask_talisman import Talisman
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
@@ -9,6 +10,7 @@ from decimal import Decimal
 import os
 from functools import wraps
 
+
 app = Flask(__name__)
 
 # ─────────────────────────────────────────────
@@ -16,11 +18,35 @@ app = Flask(__name__)
 # ─────────────────────────────────────────────
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_change_me")
 
+# Cookies de sesión más seguras (OWASP A05 / A07)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=False  # pon True en producción con HTTPS
+)
+
+# CORS solo desde tu frontend
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "null"
 ])
+
+# Cabeceras de seguridad básicas (OWASP A05)
+csp = {
+    "default-src": ["'self'"],
+    "script-src": ["'self'", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+    "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+    "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
+    "img-src": ["'self'", "data:"]
+}
+
+Talisman(
+    app,
+    content_security_policy=csp,
+    force_https=False,          # True en producción con HTTPS
+    session_cookie_secure=False # a juego con SESSION_COOKIE_SECURE
+)
 
 
 @app.route("/")
@@ -110,7 +136,7 @@ def register():
     if not d or not all(k in d for k in ["nombre", "email", "password"]):
         return error("Campos requeridos: nombre, email, password")
 
-    # OWASP A07 - Validación mínima de contraseña
+    # Validación mínima
     if len(d["password"]) < 8:
         return error("La contraseña debe tener al menos 8 caracteres")
     if "@" not in d["email"]:
@@ -157,7 +183,7 @@ def login():
         cur.execute("SELECT * FROM usuarios WHERE email=%s AND activo=1", (d["email"],))
         user = cur.fetchone()
 
-        # OWASP A07 - Mensaje genérico para no revelar si el email existe
+        # Mensaje genérico
         if not user or not bcrypt.checkpw(d["password"].encode(), user["password_hash"].encode()):
             return error("Credenciales incorrectas", 401)
 
