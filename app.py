@@ -9,14 +9,17 @@ from datetime import datetime, date
 from decimal import Decimal
 import os
 from functools import wraps
+import secrets
 
 
 app = Flask(__name__)
+
 
 # ─────────────────────────────────────────────
 # CONFIGURACIÓN GENERAL
 # ─────────────────────────────────────────────
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_change_me")
+
 
 # Cookies de sesión más seguras (OWASP A05 / A07)
 app.config.update(
@@ -25,12 +28,14 @@ app.config.update(
     SESSION_COOKIE_SECURE=False  # pon True en producción con HTTPS
 )
 
+
 # CORS solo desde tu frontend
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "null"
 ])
+
 
 # Cabeceras de seguridad básicas (OWASP A05)
 csp = {
@@ -40,6 +45,7 @@ csp = {
     "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
     "img-src": ["'self'", "data:"]
 }
+
 
 Talisman(
     app,
@@ -98,6 +104,11 @@ def success(data=None, msg="OK", code=200):
 
 def error(msg="Error", code=400):
     return jsonify({"status": "error", "message": msg}), code
+
+
+def generate_api_token():
+    # Token aleatorio de 64 caracteres hex (256 bits de entropía aprox.)
+    return secrets.token_hex(32)
 
 
 # ─────────────────────────────────────────────
@@ -191,11 +202,18 @@ def login():
         session["user_name"] = user["nombre"]
         session["user_role"] = user.get("rol", "user")
 
+        # Generar token API y guardarlo en BD
+        token = generate_api_token()
+        cur2 = conn.cursor()
+        cur2.execute("UPDATE usuarios SET api_token=%s WHERE id=%s", (token, user["id"]))
+        conn.commit()
+
         return success({
             "id":     user["id"],
             "nombre": user["nombre"],
             "email":  user["email"],
-            "rol":    user.get("rol", "user")
+            "rol":    user.get("rol", "user"),
+            "token":  token
         }, "Login exitoso")
     finally:
         conn.close()
