@@ -34,9 +34,6 @@ del OWASP Top 10 (Web y API) en el desarrollo de la aplicación
 - Los datos de portafolios y alertas se filtran siempre por `usuario_id` extraído de la sesión del servidor, nunca por un valor enviado por el cliente.
 - No se exponen endpoints públicos que permitan modificar datos sin autenticación.
 
-**Mejoras futuras:**
-- Añadir comprobaciones adicionales de “ownership” a nivel de BD (por ejemplo, verificar que el `portafolio_id` pertenece al `usuario_id` en todas las operaciones de escritura).
-- Añadir tests automáticos de control de acceso.
 
 ---
 
@@ -48,10 +45,6 @@ del OWASP Top 10 (Web y API) en el desarrollo de la aplicación
 - La `SECRET_KEY` de Flask y las credenciales de base de datos se gestionan mediante **variables de entorno** (`.env` / entorno Docker), nunca hardcodeadas en el código fuente.
 - El fichero `.env` está incluido en `.gitignore` para que no se suba al repositorio.
 - Los tokens de API se generan con `secrets.token_hex(32)`, proporcionando alta entropía criptográfica.
-
-**Mejoras futuras:**
-- Rotación periódica de secretos (`FLASK_SECRET_KEY`, tokens de API).
-- Política de caducidad y revocación de tokens.
 
 ---
 
@@ -76,13 +69,6 @@ Diseño de endpoints que siempre operan sobre recursos ligados al usuario en ses
 
 Generación de tokens de API por usuario, pensados para uso futuro desde integraciones externas.
 
-Mejoras futuras:
-
-Definir explícitamente requisitos de seguridad (threat model) y casos de abuso.
-
-Añadir limitación de intentos de login (rate limiting / bloqueo por IP o usuario).
-
-Diseñar flujos de recuperación de contraseña seguros (si se implementan).
 
 **A05 - Vulnerable and Outdated Components**
 
@@ -116,7 +102,7 @@ Decoradores que aseguran autenticación antes de acceder a recursos protegidos.
 Token de API generado en cada login y almacenado en BD, único por usuario y con alta entropía.
 
 
-**A08 - Software and Data Integrity Failures**
+**A07 - Software and Data Integrity Failures**
 
 Riesgo: Integridad de código y datos comprometida (supply chain, actualizaciones maliciosas, etc.).
 
