@@ -508,22 +508,4 @@ app.config.update(
     SESSION_COOKIE_SECURE=False,     # → True en producción con HTTPS
 )
 ```
-
----
-
-## 📝 Notas para producción
-
-Antes de desplegar en un entorno real, aplicar los siguientes cambios:
-
-- [ ] Cambiar `SESSION_COOKIE_SECURE=True` en `app.py`
-- [ ] Cambiar `force_https=True` en la configuración de Talisman
-- [ ] Generar una `FLASK_SECRET_KEY` aleatoria de mínimo 32 caracteres
-- [ ] Cambiar todas las contraseñas del `.env` (BD, etc.)
-- [ ] Añadir `Flask-Limiter` para rate limiting en `/api/login` y `/api/register`
-- [ ] Eliminar `'unsafe-inline'` del CSP sustituyendo por nonces
-- [ ] Configurar HTTPS con certificado válido (Let's Encrypt o similar)
-- [ ] Integrar `pip audit` en el pipeline CI para escaneo de vulnerabilidades
-
----
-
 *Práctica SecDevOps — Asignatura de Desarrollo Seguro — Marcos Z.G.*
