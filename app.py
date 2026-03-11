@@ -10,6 +10,7 @@ from decimal import Decimal
 import os
 from functools import wraps
 import secrets
+from time import time
 
 
 app = Flask(__name__)
@@ -20,7 +21,6 @@ app = Flask(__name__)
 # ─────────────────────────────────────────────
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev_secret_change_me")
 
-
 # Cookies de sesión más seguras (OWASP A05 / A07)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -28,14 +28,12 @@ app.config.update(
     SESSION_COOKIE_SECURE=False  # pon True en producción con HTTPS
 )
 
-
 # CORS solo desde tu frontend
 CORS(app, supports_credentials=True, origins=[
     "http://localhost:5000",
     "http://127.0.0.1:5000",
     "null"
 ])
-
 
 # Cabeceras de seguridad básicas (OWASP A05)
 csp = {
@@ -45,7 +43,6 @@ csp = {
     "font-src": ["'self'", "https://fonts.gstatic.com", "data:"],
     "img-src": ["'self'", "data:"]
 }
-
 
 Talisman(
     app,
@@ -111,6 +108,51 @@ def generate_api_token():
     return secrets.token_hex(32)
 
 
+def get_client_ip():
+    # Detrás de proxy se podría usar X-Forwarded-For; aquí basta REMOTE_ADDR
+    return request.headers.get("X-Forwarded-For", request.remote_addr or "unknown")
+
+
+# ─────────────────────────────────────────────
+# RATE LIMIT Y BLOQUEO DE LOGIN
+# ─────────────────────────────────────────────
+
+# Límite global simple por IP (ejemplo: 100 peticiones / 15 minutos)
+RATE_LIMIT_MAX_REQUESTS = 100
+RATE_LIMIT_WINDOW_SEC = 15 * 60
+
+# Límite específico de intentos de login
+LOGIN_MAX_ATTEMPTS = 5            # intentos permitidos
+LOGIN_BLOCK_WINDOW_SEC = 15 * 60  # 15 minutos bloqueado
+
+# Estructuras en memoria (dicts)
+rate_limit_store = {}     # { ip: [timestamps...] }
+login_fail_store = {}     # { "ip:email": { "fails": int, "blocked_until": ts } }
+
+
+def rate_limit(max_requests=RATE_LIMIT_MAX_REQUESTS, window_sec=RATE_LIMIT_WINDOW_SEC):
+    """Decorador simple de rate limit por IP."""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            ip = get_client_ip()
+            now = time()
+
+            timestamps = rate_limit_store.get(ip, [])
+            # limpiar timestamps fuera de ventana
+            timestamps = [ts for ts in timestamps if now - ts < window_sec]
+
+            if len(timestamps) >= max_requests:
+                return error("Demasiadas peticiones desde esta IP. Inténtalo más tarde.", 429)
+
+            timestamps.append(now)
+            rate_limit_store[ip] = timestamps
+
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 # ─────────────────────────────────────────────
 # DECORADORES DE AUTORIZACIÓN
 # ─────────────────────────────────────────────
@@ -142,6 +184,7 @@ def admin_required(f):
 # ─────────────────────────────────────────────
 
 @app.route("/api/register", methods=["POST"])
+@rate_limit(max_requests=20, window_sec=60 * 60)  # ej: 20 registros/hora por IP
 def register():
     d = request.json
     if not d or not all(k in d for k in ["nombre", "email", "password"]):
@@ -181,22 +224,46 @@ def register():
 
 
 @app.route("/api/login", methods=["POST"])
+@rate_limit(max_requests=50, window_sec=15 * 60)  # evita fuerza bruta masiva por IP
 def login():
     d = request.json
     if not d or not all(k in d for k in ["email", "password"]):
         return error("Email y contraseña requeridos")
+
+    ip = get_client_ip()
+    email = d.get("email", "").lower().strip()
+    key = f"{ip}:{email}"  # combinamos IP + email
+
+    now = time()
+    info = login_fail_store.get(key, {"fails": 0, "blocked_until": 0})
+
+    # Si está bloqueado todavía
+    if info["blocked_until"] > now:
+        minutos = int((info["blocked_until"] - now) // 60) + 1
+        return error(f"Demasiados intentos fallidos. Intenta de nuevo en ~{minutos} minutos.", 429)
 
     conn = get_db()
     if not conn:
         return error("Error de conexión a BD", 500)
     try:
         cur = conn.cursor(dictionary=True)
-        cur.execute("SELECT * FROM usuarios WHERE email=%s AND activo=1", (d["email"],))
+        cur.execute("SELECT * FROM usuarios WHERE email=%s AND activo=1", (email,))
         user = cur.fetchone()
 
         # Mensaje genérico
         if not user or not bcrypt.checkpw(d["password"].encode(), user["password_hash"].encode()):
+            # Intento fallido: actualizar contador
+            info["fails"] += 1
+            if info["fails"] >= LOGIN_MAX_ATTEMPTS:
+                info["blocked_until"] = now + LOGIN_BLOCK_WINDOW_SEC
+            login_fail_store[key] = info
+
+            if info["blocked_until"] > now:
+                return error("Demasiados intentos fallidos. Cuenta/IP temporalmente bloqueada.", 429)
             return error("Credenciales incorrectas", 401)
+
+        # Credenciales correctas → resetear contador
+        login_fail_store.pop(key, None)
 
         session["user_id"]   = user["id"]
         session["user_name"] = user["nombre"]
