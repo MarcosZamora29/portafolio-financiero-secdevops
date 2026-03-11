@@ -491,14 +491,14 @@ Ver análisis detallado en [`OWASP.md`](OWASP.md).
 
 ### Resumen de medidas implementadas
 
-| OWASP | Riesgo | Medida en el código |
-|-------|--------|-------------------|
-| A01 | Broken Access Control | `@login_required` / `@admin_required` + filtro por `session['user_id']` |
-| A02 | Cryptographic Failures | `bcrypt` + `secrets.token_hex(32)` + variables de entorno |
-| A03 | Injection | SQL parametrizado `%s` en **todas** las queries |
-| A04 | Insecure Design | Modelo de roles, tokens por usuario, separación frontend/backend |
-| A05 | Security Misconfiguration | `Flask-Talisman` (CSP, HSTS) + `Flask-CORS` restringido |
-| A07 | Auth Failures | Login seguro, `session.clear()` en logout, cookies `HttpOnly + SameSite=Lax` |
+| OWASP | Riesgo                                   | Medida en el código                                                      |
+| ----- | ---------------------------------------- | ------------------------------------------------------------------------ |
+| A01   | Control de acceso roto                   | @login_required / @admin_required + filtro por session['user_id']        |
+| A02   | Fallos criptográficos                    | bcrypt + secrets.token_hex(32) + variables de entorno                    |
+| A03   | Inyección                                | SQL parametrizado con %s en todas las consultas                          |
+| A04   | Diseño inseguro                          | Modelo de roles, tokens por usuario, separación frontend/backend         |
+| A05   | Configuración de seguridad incorrecta    | Flask-Talisman (CSP, HSTS) + Flask-CORS restringido                      |
+| A07   | Fallos de identificación y autenticación | Login seguro, session.clear() en logout, cookies HttpOnly + SameSite=Lax |
 
 ```python
 # Cookies de sesión seguras (app.py)
