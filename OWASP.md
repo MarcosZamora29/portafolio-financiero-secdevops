@@ -13,7 +13,7 @@ Este documento describe cómo se han tenido en cuenta los riesgos del **OWASP To
 | A03 | Injection | ✅ Mitigado | SQL parametrizado en todas las consultas |
 | A04 | Insecure Design | ⚠️ Parcial | Roles, tokens — falta rate limiting |
 | A05 | Security Misconfiguration | ⚠️ Parcial | Talisman + CORS — falta hardening en producción |
-| A06 | Vulnerable Components | ⚠️ Parcial | requirements.txt — falta escaneo automático |
+| A06 | Vulnerable Components | ✅ Mitigado | requirements.txt — escaneo automático |
 | A07 | Auth & Identification Failures | ✅ Mitigado | Login seguro, sesiones, cookies HttpOnly/SameSite |
 | A08 | Software & Data Integrity | ⚠️ Parcial | CI/CD con GitHub Actions — falta firmado de imágenes |
 | A09 | Security Logging & Monitoring | ⚠️ Parcial | Logs básicos — falta SIEM |
