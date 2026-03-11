@@ -144,12 +144,6 @@ Y en los logs del backend:
 ═══════════════════════════════════════════════════
 ```
 
-> 📸 **Captura del entorno Docker activo:**
-> *(Insertar captura de pantalla del terminal mostrando los contenedores corriendo)*
-> ![docker-up](img/docker_up.png)
-
----
-
 ## 🐍 Entorno virtual Python (alternativa sin Docker)
 
 Si se prefiere ejecutar el backend directamente en la máquina sin Docker:
@@ -174,13 +168,6 @@ cp .env.example .env
 python app.py
 ```
 
-El prompt del terminal mostrará el prefijo `(.venv)` cuando el entorno esté activo.
-
-> 📸 **Captura del prompt con el entorno virtual activo:**
-> *(Insertar captura de pantalla donde se vea `(.venv)` en el prompt)*
-> ![venv](img/venv_prompt.png)
-
----
 
 ## 🗄️ Base de datos
 
