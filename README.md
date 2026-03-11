@@ -1,292 +1,542 @@
-=====================================================
-PORTAFOLIO FINANCIERO — BACKEND FLASK + DOCKER
-=====================================================
+# 📊 Portafolio Pro — Práctica SecDevOps
 
-Aplicación de portafolio financiero con backend en Flask, base de datos MySQL y despliegue mediante Docker Compose.[web:137][web:131]  
-Incluye autenticación con bcrypt, sesiones seguras, generación de token de API, CORS y cabeceras de seguridad con Flask‑Talisman.[web:146][web:150][web:148][web:151]
+> Aplicación de gestión de portafolio financiero desarrollada como práctica del ciclo **SecDevOps**.  
+> Backend en **Flask (Python 3.12)**, base de datos **MySQL 8.0**, frontend en **HTML/JS** estático (SPA),  
+> desplegado íntegramente mediante **Docker Compose** y con pipeline de CI/CD en **GitHub Actions**.
 
-=====================================================
-ESTRUCTURA DEL PROYECTO
-=====================================================
+---
 
-proyecto-1/
-├── app.py                           ← Backend Flask (API REST)
-├── index.html                       ← Frontend estático
-├── docker-compose.yml               ← Orquestación Docker Compose
-├── Dockerfile                       ← Imagen del backend
-├── requirements.txt                 ← Dependencias Python
-├── portafolio_db.sql                ← Script inicial de base de datos
-├── README.md                        ← Este documento
-└── .env                             ← Variables de entorno (no subir a Git)
+## 📌 Índice
 
-=====================================================
-TECNOLOGÍAS UTILIZADAS
-=====================================================
+1. [Descripción del proyecto](#descripción-del-proyecto)
+2. [Estructura del proyecto](#estructura-del-proyecto)
+3. [Tecnologías utilizadas](#tecnologías-utilizadas)
+4. [Entorno de desarrollo — Docker](#entorno-de-desarrollo--docker)
+5. [Entorno virtual Python (alternativa)](#entorno-virtual-python-alternativa)
+6. [Base de datos](#base-de-datos)
+7. [Autenticación y autorización](#autenticación-y-autorización)
+8. [Variables de entorno](#variables-de-entorno)
+9. [Endpoints de la API](#endpoints-de-la-api)
+10. [Pruebas](#pruebas)
+11. [CI/CD con GitHub Actions](#cicd-con-github-actions)
+12. [Gestión de versiones con Git](#gestión-de-versiones-con-git)
+13. [Seguridad aplicada — OWASP](#seguridad-aplicada--owasp)
+14. [Notas para producción](#notas-para-producción)
 
-- **Flask** como framework web para Python.
-- **MySQL** como base de datos relacional.
-- **mysql-connector-python** para conectar Flask con MySQL.
-- **bcrypt** para hash y verificación de contraseñas.
-- **Flask-CORS** para configurar CORS entre frontend y backend.
-- **Flask-Talisman** para añadir cabeceras de seguridad (CSP, cookies seguras, etc.).
-- **Docker** y **Docker Compose** para desplegar backend y base de datos en contenedores.
-- **Sesiones de Flask** para autenticación vía cookie.
-- **Tokens de API** generados con `secrets.token_hex(32)` y almacenados en la tabla `usuarios`.
+---
 
-=====================================================
-VARIABLES DE ENTORNO (.env)
-=====================================================
+## 📖 Descripción del proyecto
 
-En la raíz del proyecto crea un archivo `.env`:
+**Portafolio Pro** es una aplicación web que permite a inversores gestionar sus carteras financieras:
 
+- Registrar **compras, ventas y dividendos** de acciones, ETFs, criptomonedas, bonos y materias primas
+- Ver el **resumen en tiempo real** de posiciones, valor de mercado, coste total y P&L (ganancia/pérdida)
+- Visualizar **gráficas de distribución** por tipo de activo y por sector
+- Configurar **alertas de precio** sobre cualquier activo del catálogo
+- Gestionar múltiples **portafolios independientes** por usuario
+
+El objetivo principal de la práctica **no es la funcionalidad financiera** sino demostrar un ciclo completo de SecDevOps:  
+contenedores → entornos virtuales → autenticación segura → API REST → OWASP → tests → CI/CD → Git.
+
+---
+
+## 🗂️ Estructura del proyecto
+
+```
+portafolio-pro/
+├── app.py                          # Backend Flask — API REST completa
+├── index.html                      # Frontend estático (SPA — Single Page App)
+├── docker-compose.yml              # Orquestación de servicios Docker
+├── Dockerfile                      # Imagen Docker del backend Flask
+├── requirements.txt                # Dependencias Python fijadas con versión
+├── portfolio_db.sql                # Script SQL de inicialización de la BD
+├── .gitignore                      # Ficheros y carpetas excluidos de Git
+├── .env                            # Variables de entorno locales (NO subir a Git)
+├── README.md                       # Este documento
+├── OWASP.md                        # Análisis de seguridad OWASP Top 10
+├── Portafolio-Pro.postman_collection.json  # Colección Postman para pruebas manuales
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  # Pipeline de CI/CD con GitHub Actions
+└── test/
+    ├── test_unit.py                # Tests unitarios (pytest)
+    └── test_integration.py         # Tests de integración (pytest)
+```
+
+---
+
+## 🛠️ Tecnologías utilizadas
+
+| Capa | Tecnología | Versión | Función |
+|------|-----------|---------|---------|
+| Backend | Flask | 3.x | Framework web Python — API REST + servidor SPA |
+| Base de datos | MySQL | 8.0 | Persistencia relacional de datos financieros |
+| Conector BD | mysql-connector-python | latest | Conexión Flask ↔ MySQL con queries parametrizadas |
+| Hash contraseñas | bcrypt | latest | Almacenamiento seguro de passwords con salt |
+| Cabeceras HTTP | Flask-Talisman | latest | CSP, HSTS, X-Frame-Options, X-Content-Type |
+| CORS | Flask-CORS | latest | Control de orígenes cruzados entre frontend y API |
+| Contenedores | Docker + Compose | latest | Despliegue reproducible y aislado |
+| CI/CD | GitHub Actions | — | Pipeline automático de tests en cada push |
+| Tests | pytest | latest | Tests unitarios e integración |
+| Pruebas manuales | Postman | — | Colección de pruebas de todos los endpoints |
+| Frontend | HTML5 + Vanilla JS | — | SPA sin framework, comunicación con la API via fetch |
+| Gráficas | Chart.js | 4.4.0 | Doughnut charts de distribución de portafolio |
+
+---
+
+## 🐳 Entorno de desarrollo — Docker
+
+**Opción utilizada: entorno en contenedores Docker Compose.**  
+Todo el stack (backend + base de datos) se levanta con un único comando, aislado del sistema anfitrión.
+
+### Servicios en `docker-compose.yml`
+
+| Servicio | Imagen | Puerto host | Puerto contenedor | Función |
+|----------|--------|-------------|-------------------|---------|
+| `db` | mysql:8.0 | 3307 | 3306 | Base de datos MySQL |
+| `backend` | python:3.12-slim (build local) | 5000 | 5000 | API Flask + servidor SPA |
+
+El servicio `backend` **espera a que `db` esté sano** antes de arrancar gracias al `healthcheck` de MySQL:
+
+```yaml
+depends_on:
+  db:
+    condition: service_healthy
+```
+
+### Comandos principales
+
+```bash
+# Levantar todo el stack (primera vez o tras cambios)
+docker compose up --build -d
+
+# Ver logs en tiempo real
+docker compose logs -f
+
+# Parar y eliminar contenedores
+docker compose down
+
+# Parar y eliminar contenedores + volúmenes (borra la BD)
+docker compose down -v
+```
+
+### Verificar que todo funciona
+
+```bash
+docker compose ps
+```
+
+Deberías ver ambos contenedores con estado `Up (healthy)`:
+
+```
+NAME                  STATUS
+portafolio-db         Up (healthy)
+portafolio-backend    Up
+```
+
+Y en los logs del backend:
+
+```
+═══════════════════════════════════════════════════
+  PORTAFOLIO FINANCIERO - BACKEND FLASK
+  Modo debug: False
+  Servidor: http://localhost:5000
+═══════════════════════════════════════════════════
+```
+
+> 📸 **Captura del entorno Docker activo:**
+> *(Insertar captura de pantalla del terminal mostrando los contenedores corriendo)*
+> ![docker-up](img/docker_up.png)
+
+---
+
+## 🐍 Entorno virtual Python (alternativa sin Docker)
+
+Si se prefiere ejecutar el backend directamente en la máquina sin Docker:
+
+```bash
+# 1. Crear el entorno virtual
+python -m venv .venv
+
+# 2. Activar (Windows PowerShell)
+.venv\Scripts\Activate.ps1
+
+# 2. Activar (Linux / macOS)
+source .venv/bin/activate
+
+# 3. Instalar dependencias
+pip install -r requirements.txt
+
+# 4. Configurar variables de entorno (copiar y editar)
+cp .env.example .env
+
+# 5. Ejecutar el backend
+python app.py
+```
+
+El prompt del terminal mostrará el prefijo `(.venv)` cuando el entorno esté activo.
+
+> 📸 **Captura del prompt con el entorno virtual activo:**
+> *(Insertar captura de pantalla donde se vea `(.venv)` en el prompt)*
+> ![venv](img/venv_prompt.png)
+
+---
+
+## 🗄️ Base de datos
+
+### Esquema de tablas (MySQL)
+
+| Tabla | Descripción | Campos clave |
+|-------|------------|--------------|
+| `usuarios` | Usuarios registrados | `id`, `nombre`, `email`, `password_hash`, `rol`, `activo`, `api_token` |
+| `portafolios` | Carteras de inversión por usuario | `id`, `usuario_id`, `nombre`, `moneda_base` |
+| `activos` | Catálogo de instrumentos financieros | `id`, `ticker`, `nombre`, `tipo`, `sector`, `moneda` |
+| `transacciones` | Compras, ventas y dividendos | `id`, `portafolio_id`, `activo_id`, `tipo`, `cantidad`, `precio_unitario`, `comision`, `fecha` |
+| `precios_historicos` | Precios de cierre por activo y fecha | `activo_id`, `fecha`, `precio_cierre`, `volumen` |
+| `alertas` | Alertas de precio por usuario | `id`, `usuario_id`, `activo_id`, `tipo`, `valor_referencia`, `activa` |
+
+### Inicialización automática
+
+Al levantar con Docker Compose, el fichero `portfolio_db.sql` se ejecuta automáticamente como script de inicialización gracias a:
+
+```yaml
+volumes:
+  - ./portfolio_db.sql:/docker-entrypoint-initdb.d/init.sql
+```
+
+### Inicialización manual (sin Docker)
+
+```bash
+docker exec -i portafolio-db mysql -u root -prootpass portafoliofinanciero < portfolio_db.sql
+```
+
+---
+
+## 🔐 Autenticación y autorización
+
+### Dos tipos de usuario
+
+| Rol | Permisos |
+|-----|---------|
+| `user` | Gestionar sus propios portafolios, transacciones, alertas y ver activos |
+| `admin` | Todo lo anterior + ver todos los usuarios, crear activos, cargar precios históricos |
+
+### Diferenciación visual del administrador
+
+Cuando un usuario con rol `admin` inicia sesión, la interfaz cambia visualmente:
+- El título del topbar muestra **⚙️ ADMIN — Dashboard**
+- Aparece un badge **ADMIN** dorado junto al nombre en el sidebar
+- El sidebar adopta un tono dorado/ámbar para distinguirlo del usuario normal
+
+### Decoradores de seguridad en `app.py`
+
+```python
+def login_required(f):
+    # Verifica que session['user_id'] existe antes de procesar la petición
+    # Si no hay sesión → 401 Unauthorized
+
+def admin_required(f):
+    # Verifica sesión activa Y que session['user_role'] == 'admin'
+    # Si es user normal → 403 Forbidden
+```
+
+### Flujo completo de autenticación
+
+```
+1. POST /api/register
+   Body: { nombre, email, password }
+   → Valida: email válido, contraseña ≥ 8 caracteres
+   → Hashea password con bcrypt + salt aleatorio
+   → Crea usuario con rol 'user' + portafolio 'Mi Portafolio' por defecto
+   → Responde: { status: 'success', usuario_id: X }
+
+2. POST /api/login
+   Body: { email, password }
+   → Busca usuario activo en BD por email
+   → Verifica password con bcrypt.checkpw (tiempo constante)
+   → Mensaje de error genérico si falla (no revela si el email existe)
+   → Guarda en sesión: session['user_id'], session['user_name'], session['user_role']
+   → Genera token API con secrets.token_hex(32) → 256 bits de entropía
+   → Actualiza usuarios.api_token en BD
+   → Responde: { id, nombre, email, rol, token }
+
+3. GET /api/me
+   → Devuelve datos del usuario autenticado desde la sesión
+   → Usado por el frontend para restaurar sesión al recargar la página
+
+4. POST /api/logout
+   → session.clear() — invalida completamente la sesión
+```
+
+---
+
+## 🔑 Variables de entorno
+
+Crea un fichero `.env` en la raíz (ya incluido en `.gitignore` — **nunca subir a Git**):
+
+```env
+# Base de datos
 DB_HOST=db
 DB_PORT=3306
 DB_USER=appuser
 DB_PASSWORD=apppass
-DB_NAME=portafolio_financiero
-FLASK_SECRET_KEY=portafolio_super_secret_2025
+DB_NAME=portafoliofinanciero
+
+# Flask
+FLASK_SECRET_KEY=cambia-esto-por-algo-seguro-minimo-32-caracteres
 FLASK_DEBUG=false
+```
 
-python
-DB_CONFIG = {
-    "host":     os.getenv("DB_HOST", "localhost"),
-    "user":     os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "database": os.getenv("DB_NAME", "portafolio_financiero"),
-    "port":     int(os.getenv("DB_PORT", "3306")),
-}
-=====================================================
-BASE DE DATOS (MySQL)
-Levanta los contenedores (ver siguiente sección).
+En Docker Compose las variables se inyectan directamente en el contenedor mediante la sección `environment` del `docker-compose.yml`, sin necesidad del fichero `.env`.
 
-bash
-docker exec -i NOMBRE_CONTENEDOR_DB \
-  mysql -u root -p portafolio_financiero < portafolio_db.sql
-Asegúrate de que la tabla usuarios tiene la columna de token:
+---
 
-sql
-ALTER TABLE usuarios
-  ADD COLUMN api_token VARCHAR(255) NULL;
-Tablas usadas (resumen):
+## 📡 Endpoints de la API
 
-usuarios (id, nombre, email, password_hash, rol, activo, api_token)
+Base URL: `http://localhost:5000/api`
 
-portafolios
+### Autenticación (pública)
 
-activos
+| Método | Endpoint | Descripción | Body requerido |
+|--------|----------|-------------|----------------|
+| `POST` | `/register` | Registrar nuevo usuario | `{ nombre, email, password }` |
+| `POST` | `/login` | Iniciar sesión | `{ email, password }` |
+| `POST` | `/logout` | Cerrar sesión | — |
+| `GET` | `/me` | Datos del usuario en sesión | — |
 
-transacciones
+### Administración (`admin_required`)
 
-precios_historicos
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/admin/usuarios` | Listar todos los usuarios registrados |
 
-alertas
+### Portafolios (`login_required`)
 
-=====================================================
-DESPLIEGUE CON DOCKER COMPOSE
-Desde la carpeta donde está docker-compose.yml:
+| Método | Endpoint | Descripción | Body |
+|--------|----------|-------------|------|
+| `GET` | `/portafolios` | Listar portafolios del usuario | — |
+| `POST` | `/portafolios` | Crear nuevo portafolio | `{ nombre, descripcion, moneda_base }` |
+| `DELETE` | `/portafolios/<id>` | Eliminar portafolio | — |
 
-bash
-docker compose down
-docker compose up --build
-# o en segundo plano:
-docker compose up --build -d
-Ver logs:
+### Activos
 
-bash
-docker compose logs -f
-Deberías ver algo como:
+| Método | Endpoint | Auth | Descripción |
+|--------|----------|------|-------------|
+| `GET` | `/activos` | `login_required` | Listar activos (filtro opcional `?tipo=accion`) |
+| `POST` | `/activos` | `admin_required` | Crear nuevo activo en el catálogo |
 
-text
-=======================================================
-  PORTAFOLIO FINANCIERO - BACKEND FLASK
-  Modo debug: True/False
-  Servidor: http://localhost:5000
-=======================================================
-Servicios típicos en docker-compose.yml:
+### Transacciones (`login_required`)
 
-db → MySQL (puerto interno 3306).
+| Método | Endpoint | Descripción | Body |
+|--------|----------|-------------|------|
+| `GET` | `/transacciones?portafolio_id=X` | Listar transacciones del portafolio | — |
+| `POST` | `/transacciones` | Registrar transacción | `{ portafolio_id, activo_id, tipo, cantidad, precio_unitario, comision, fecha }` |
+| `DELETE` | `/transacciones/<id>` | Eliminar transacción | — |
 
-backend → Flask, expuesto en el puerto 5000 del host.
+Tipos de transacción: `compra`, `venta`, `dividendo`
 
-=====================================================
-CONFIGURACIÓN DE SEGURIDAD
-En app.py se han aplicado varias medidas:
+### Resumen y estadísticas (`login_required`)
 
-Cookies de sesión:
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/resumen/<portafolio_id>` | Posiciones abiertas, valor de mercado, coste, P&L, distribución por tipo y sector |
+| `GET` | `/estadisticas/<portafolio_id>` | Total invertido, realizado, comisiones, mayor compra |
 
-SESSION_COOKIE_HTTPONLY=True (no accesible desde JS).
+### Precios históricos
 
-SESSION_COOKIE_SAMESITE="Lax" (mitiga CSRF).
+| Método | Endpoint | Auth | Descripción |
+|--------|----------|------|-------------|
+| `GET` | `/precios?activo_id=X` | `login_required` | Últimos 365 precios de cierre |
+| `POST` | `/precios` | `admin_required` | Insertar/actualizar precio (upsert) |
 
-SESSION_COOKIE_SECURE=False en desarrollo (True en producción con HTTPS).
+### Alertas (`login_required`)
 
-Flask-Talisman:
+| Método | Endpoint | Descripción | Body |
+|--------|----------|-------------|------|
+| `GET` | `/alertas` | Listar alertas del usuario | — |
+| `POST` | `/alertas` | Crear alerta | `{ activo_id, tipo, valor_referencia }` |
+| `DELETE` | `/alertas/<id>` | Eliminar alerta | — |
 
-Configura Content-Security-Policy (CSP) para limitar scripts, estilos, imágenes y fuentes.
+Tipos de alerta: `precio_mayor`, `precio_menor`, `variacion_porcentaje`
 
-Configura cabeceras de seguridad comunes.
+### Respuesta estándar de la API
 
-Flask-CORS:
+```json
+// Éxito
+{ "status": "success", "message": "OK", "data": { ... } }
 
-Permite orígenes http://localhost:5000, http://127.0.0.1:5000 y null con credenciales.
+// Error
+{ "status": "error", "message": "Descripción del error" }
+```
 
-=====================================================
-AUTENTICACIÓN (SESIONES + TOKEN API)
-Registro de usuario
-POST /api/register
+---
 
-Body JSON:
+## 🧪 Pruebas
 
-json
-{
-  "nombre": "Usuario Demo",
-  "email": "usuario@example.com",
-  "password": "contraseña_segura"
-}
-Valida longitud mínima de la contraseña (8 caracteres).
+Se han implementado **tres niveles de prueba**:
 
-Valida formato básico del email.
+### 1. Tests unitarios — `test/test_unit.py`
 
-Hashea la contraseña con bcrypt.hashpw(...).decode().
+Verifican funciones individuales aisladas de la capa de red y base de datos:
 
-Crea el usuario con rol user y un portafolio por defecto: "Mi Portafolio".
+| Test | Qué verifica |
+|------|-------------|
+| `test_generate_token` | El token tiene 64 caracteres hexadecimales (256 bits) |
+| `test_token_unique` | Cada llamada genera un token diferente |
+| `test_json_serial_datetime` | La función serializa `datetime` a ISO 8601 |
+| `test_json_serial_decimal` | La función serializa `Decimal` a `float` |
+| `test_json_serial_invalid` | Lanza `TypeError` con tipo no soportado |
+| `test_password_hash` | bcrypt hashea y verifica correctamente |
+| `test_email_validation` | Acepta emails válidos, rechaza inválidos |
 
-Login
-POST /api/login
+```bash
+pytest test/test_unit.py -v
+```
 
-Body JSON:
+### 2. Tests de integración — `test/test_integration.py`
 
-json
-{
-  "email": "usuario@example.com",
-  "password": "contraseña_segura"
-}
-Flujo:
+Verifican flujos completos end-to-end usando un cliente de test de Flask:
 
-Recupera el usuario activo desde MySQL.
+| Test | Qué verifica |
+|------|-------------|
+| `test_register_success` | Registro correcto devuelve 201 |
+| `test_register_duplicate_email` | Email duplicado devuelve error |
+| `test_login_success` | Login correcto establece sesión y devuelve token |
+| `test_login_wrong_password` | Credenciales incorrectas → 401 |
+| `test_protected_without_auth` | Endpoint protegido sin sesión → 401 |
+| `test_admin_endpoint_as_user` | Usuario normal en endpoint admin → 403 |
+| `test_full_portfolio_flow` | Registro → Login → Crear portafolio → Listar → Eliminar |
 
-Verifica la contraseña con bcrypt.checkpw.
+```bash
+pytest test/test_integration.py -v
+```
 
-Guarda en la sesión:
+### 3. Pruebas manuales — Colección Postman
 
-session["user_id"]
+El fichero `Portafolio-Pro.postman_collection.json` incluye una colección completa importable en Postman con:
 
-session["user_name"]
+- `01 - Registrar usuario` — POST `/api/register`
+- `02 - Login` — POST `/api/login` + guarda variables de entorno
+- `03 - Obtener usuario actual` — GET `/api/me`
+- `04 - Listar portafolios` — GET `/api/portafolios`
 
-session["user_role"]
+Cada request incluye **scripts de test automáticos** que verifican:
+- Código de respuesta HTTP correcto
+- `status: 'success'` en el body
+- Presencia de campos requeridos en la respuesta
 
-Genera un token de API:
+### Ejecutar todos los tests
 
-python
-import secrets
+```bash
+# Todos los tests
+pytest test/ -v
 
-def generate_api_token():
-    return secrets.token_hex(32)
-Actualiza usuarios.api_token con ese token.
+# Con informe de cobertura
+pytest test/ -v --cov=app --cov-report=term-missing
 
-Devuelve en la respuesta JSON:
+# Solo unitarios
+pytest test/test_unit.py -v
 
-json
-{
-  "status": "success",
-  "message": "Login exitoso",
-  "data": {
-    "id": 1,
-    "nombre": "Usuario Demo",
-    "email": "usuario@example.com",
-    "rol": "user",
-    "token": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  }
-}
-Logout y usuario actual
-POST /api/logout → Limpia la sesión.
+# Solo integración
+pytest test/test_integration.py -v
+```
 
-GET /api/me → Devuelve id, nombre y rol del usuario logueado.
+---
 
-Decoradores:
+## ⚙️ CI/CD con GitHub Actions
 
-@login_required → requiere session["user_id"].
+Fichero: `.github/workflows/ci.yml`
 
-@admin_required → requiere sesión y session["user_role"] == "admin".
+El pipeline se ejecuta automáticamente en cada `push` y `pull request` a cualquier rama.
 
-(Para APIs externas puedes añadir en el futuro un @token_required que valide Authorization: Bearer <token> contra usuarios.api_token.)
+### Pasos del pipeline
 
-=====================================================
-FRONTEND
+```
+1. Checkout del código
+2. Configurar Python 3.12
+3. Instalar dependencias (pip install -r requirements.txt)
+4. Ejecutar tests unitarios (pytest test/test_unit.py -v)
+5. Ejecutar tests de integración (pytest test/test_integration.py -v)
+```
 
-El frontend espera que el backend esté en http://localhost:5000.
+Esto garantiza que **ningún código que rompa los tests pueda llegar a `main`** sin ser detectado.
 
-=====================================================
-ENDPOINTS DE LA API
-Autenticación
+---
 
-Método	Endpoint	Descripción
-POST	/api/register	Registrar usuario
-POST	/api/login	Iniciar sesión (sesión + token)
-POST	/api/logout	Cerrar sesión
-GET	/api/me	Datos del usuario actual
-Administración
+## 🌿 Gestión de versiones con Git
 
-Método	Endpoint	Descripción
-GET	/api/admin/usuarios	Listar usuarios (solo admin)
-Portafolios
+El proyecto sigue un flujo **GitFlow simplificado**, con ramas de características que se fusionan a `main` mediante Pull Request.
 
-Método	Endpoint	Descripción
-GET	/api/portafolios	Listar portafolios del usuario
-POST	/api/portafolios	Crear portafolio
-DELETE	/api/portafolios/:id	Eliminar portafolio
-Activos
+### Ramas del proyecto
 
-Método	Endpoint	Descripción
-GET	/api/activos	Listar activos (con filtro tipo)
-POST	/api/activos	Crear activo (solo admin)
-Transacciones
+| Rama | Descripción | Estado |
+|------|------------|--------|
+| `main` | Rama principal estable y desplegable | ✅ Activa |
+| `feature/roles-admin` | Autenticación, roles `user`/`admin`, decoradores de seguridad | ✅ Fusionada |
+| `feature/docker` | Dockerfile, docker-compose.yml, configuración de contenedores | ✅ Fusionada |
+| `feature/tests` | Tests unitarios, tests de integración, configuración pytest | ✅ Fusionada |
+| `feature/ci-actions` | Pipeline GitHub Actions (`.github/workflows/ci.yml`) | ✅ Fusionada |
+| `feature/docs` | README.md, OWASP.md, documentación del proyecto | ✅ Fusionada |
 
-Método	Endpoint	Descripción
-GET	/api/transacciones	Listar transacciones (por portafolio_id)
-POST	/api/transacciones	Crear transacción
-DELETE	/api/transacciones/:id	Eliminar transacción
-Resumen y estadísticas
+### Flujo de trabajo seguido
 
-Método	Endpoint	Descripción
-GET	/api/resumen/:portafolio_id	Resumen de posiciones, valor y PnL
-GET	/api/estadisticas/:id	Estadísticas avanzadas del portafolio
-Precios históricos
+```
+main
+ ├── feature/roles-admin  →  (PR)  →  main
+ ├── feature/docker       →  (PR)  →  main
+ ├── feature/tests        →  (PR)  →  main
+ ├── feature/ci-actions   →  (PR)  →  main
+ └── feature/docs         →  (PR)  →  main
+```
 
-Método	Endpoint	Descripción
-GET	/api/precios	Listar precios históricos (activo_id)
-POST	/api/precios	Insertar/actualizar precio histórico
-Alertas
+Cada rama se creó con:
+```bash
+git checkout -b feature/nombre-rama
+```
 
-Método	Endpoint	Descripción
-GET	/api/alertas	Listar alertas del usuario
-POST	/api/alertas	Crear alerta
-DELETE	/api/alertas/:id	Eliminar alerta
-=====================================================
-CÓMO EJECUTAR SIN DOCKER (OPCIONAL)
-Crear entorno virtual:
+Y se fusionó a `main` mediante Pull Request en GitHub, manteniendo el historial completo de cambios.
 
-bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-Instalar dependencias:
+---
 
-bash
-pip install -r requirements.txt
-Exportar variables de entorno (DB_*, FLASK_*) apuntando a tu MySQL local.
+## 🔒 Seguridad aplicada — OWASP
 
-Ejecutar:
+Ver análisis detallado en [`OWASP.md`](OWASP.md).
 
-bash
-python app.py
-Servidor disponible en http://localhost:5000.
+### Resumen de medidas implementadas
 
-=====================================================
-NOTAS FINALES
-En producción:
+| OWASP | Riesgo | Medida en el código |
+|-------|--------|-------------------|
+| A01 | Broken Access Control | `@login_required` / `@admin_required` + filtro por `session['user_id']` |
+| A02 | Cryptographic Failures | `bcrypt` + `secrets.token_hex(32)` + variables de entorno |
+| A03 | Injection | SQL parametrizado `%s` en **todas** las queries |
+| A04 | Insecure Design | Modelo de roles, tokens por usuario, separación frontend/backend |
+| A05 | Security Misconfiguration | `Flask-Talisman` (CSP, HSTS) + `Flask-CORS` restringido |
+| A07 | Auth Failures | Login seguro, `session.clear()` en logout, cookies `HttpOnly + SameSite=Lax` |
 
-Usar HTTPS y SESSION_COOKIE_SECURE=True.
+```python
+# Cookies de sesión seguras (app.py)
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,    # No accesible desde JavaScript → XSS mitigado
+    SESSION_COOKIE_SAMESITE='Lax',   # Mitiga ataques CSRF
+    SESSION_COOKIE_SECURE=False,     # → True en producción con HTTPS
+)
+```
 
-Revisar y endurecer la política CSP de Talisman.
+---
 
-Configurar contraseñas y secretos vía variables de entorno seguras.
+## 📝 Notas para producción
+
+Antes de desplegar en un entorno real, aplicar los siguientes cambios:
+
+- [ ] Cambiar `SESSION_COOKIE_SECURE=True` en `app.py`
+- [ ] Cambiar `force_https=True` en la configuración de Talisman
+- [ ] Generar una `FLASK_SECRET_KEY` aleatoria de mínimo 32 caracteres
+- [ ] Cambiar todas las contraseñas del `.env` (BD, etc.)
+- [ ] Añadir `Flask-Limiter` para rate limiting en `/api/login` y `/api/register`
+- [ ] Eliminar `'unsafe-inline'` del CSP sustituyendo por nonces
+- [ ] Configurar HTTPS con certificado válido (Let's Encrypt o similar)
+- [ ] Integrar `pip audit` en el pipeline CI para escaneo de vulnerabilidades
+
+---
+
+*Práctica SecDevOps — Asignatura de Desarrollo Seguro — Marcos Z.G.*
