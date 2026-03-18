@@ -93,14 +93,15 @@ cur.execute(f"SELECT * FROM usuarios WHERE email = '{email}'")
 **Riesgo:** Ausencia de controles de seguridad en el propio diseño de la aplicación.
 
 **Medidas aplicadas:**
-- Modelo de roles (`user` / `admin`) separando capacidades desde el diseño.
-- Todos los endpoints operan sobre recursos ligados al usuario en sesión.
-- Tokens de API únicos por usuario con alta entropía, renovados en cada login.
-- Separación clara entre frontend (HTML estático) y backend (API REST).
+- Modelo de roles (`user` / `admin`) separando capacidades desde el diseño (decoradores `@login_required` y `@admin_required` en endpoints críticos).
+- Todos los endpoints de negocio operan sobre recursos ligados al usuario en sesión (`session["user_id"]`).
+- Tokens de API únicos por usuario con alta entropía (`secrets.token_hex(32)`), generados y renovados en cada login.
+- Separación clara entre frontend (HTML/JS estático) y backend (API REST JSON).
+- Implementado **rate limiting** en endpoints sensibles (`/api/register`, `/api/login`) mediante un decorador propio `@rate_limit`.
+- Añadido bloqueo temporal de login tras varios intentos fallidos por combinación IP+email (`LOGIN_MAX_ATTEMPTS`, `LOGIN_BLOCK_WINDOW_SEC`).
 
-**Pendiente de mejorar:**
-- Implementar **rate limiting** en los endpoints de autenticación (`/api/login`, `/api/register`) para prevenir ataques de fuerza bruta (usando `Flask-Limiter`).
-- Añadir bloqueo temporal de cuenta tras N intentos fallidos.
+**Estado actual:**  
+Los controles de diseño de seguridad (roles, sesión obligatoria, rate limiting y bloqueo de fuerza bruta) están ya implementados y activos en el backend.
 
 ---
 
