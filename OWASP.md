@@ -17,7 +17,7 @@ Este documento describe cómo se han tenido en cuenta los riesgos del **OWASP To
 | A07 | Auth & Identification Failures | Mitigado | Login seguro, sesiones, cookies HttpOnly/SameSite |
 | A08 | Software & Data Integrity | Parcial | CI/CD con GitHub Actions — falta firmado de imágenes |
 | A09 | Security Logging & Monitoring |  Parcial | Logs básicos — falta SIEM |
-| A10 | SSRF | ✅N/A | No se realizan peticiones a URLs externas desde el usuario |
+| A10 | SSRF | Parcial | No se realizan peticiones a URLs externas desde el usuario |
 
 ---
 
