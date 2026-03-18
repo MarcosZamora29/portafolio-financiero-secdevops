@@ -142,10 +142,6 @@ Talisman(app, content_security_policy=csp, force_https=False)
 - Las dependencias se gestionan con `requirements.txt` con versiones fijadas.
 - El pipeline de GitHub Actions ejecuta `pip install` con las versiones declaradas.
 
-**Pendiente de mejorar:**
-- Integrar **`pip audit`** o **Dependabot** en el pipeline CI para escanear vulnerabilidades automáticamente.
-- Escanear la imagen Docker con **Trivy** o **Snyk**.
-
 ---
 
 ### A07 — Identification and Authentication Failures
@@ -178,9 +174,6 @@ app.config.update(
 - Fichero `requirements.txt` con versiones fijadas para builds reproducibles.
 - Scripts SQL versionados en el repositorio (`portfolio_db.sql`).
 
-**Pendiente de mejorar:**
-- Firmado de imágenes Docker con Docker Content Trust.
-- Verificación de checksums de dependencias con `pip hash`.
 
 ---
 
@@ -192,10 +185,6 @@ app.config.update(
 - Flask registra automáticamente errores HTTP en la consola del contenedor.
 - Los logs son accesibles mediante `docker compose logs -f`.
 
-**Pendiente de mejorar:**
-- Registrar intentos de login fallidos (IP, timestamp, email).
-- Implementar logging estructurado (JSON) exportable a herramientas SIEM.
-- Añadir alertas ante múltiples errores 401/403 en poco tiempo.
 
 ---
 
