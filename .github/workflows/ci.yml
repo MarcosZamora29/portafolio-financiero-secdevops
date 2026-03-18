@@ -37,8 +37,7 @@ jobs:
           DB_NAME: portafolio_test
           FLASK_SECRET_KEY: ci_test_secret
           FLASK_DEBUG: "false"
-        run: |
-          python -m pytest tests/ -v
+        run: python -m pytest -q
 
   docker:
     runs-on: ubuntu-latest

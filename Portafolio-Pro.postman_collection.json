@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "Portafolio Pro - Pruebas API",
+    "_postman_id": "8b1a0c3b-1234-4567-89ab-abcdef123456",
+    "description": "Colección de pruebas básicas para la API de Portafolio Pro (registro, login, me, portafolios).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Registrar usuario",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Registro responde 201 o 200', function () {",
+              "    pm.expect(pm.response.code === 201 || pm.response.code === 200).to.be.true;",
+              "});",
+              "",
+              "pm.test('Registro status success', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"nombre\": \"Usuario Test\",\n  \"email\": \"testuser@example.com\",\n  \"password\": \"test12345\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/register",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "register"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Login status success', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.environment.set('user_nombre', json.data.nombre);",
+              "    pm.environment.set('user_email', json.data.email);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"testuser@example.com\",\n  \"password\": \"test12345\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/login",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "login"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Obtener usuario actual (/api/me)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Me 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Me devuelve usuario', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data).to.have.property('id');",
+              "    pm.expect(json.data).to.have.property('nombre');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/me",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "me"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Listar portafolios",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Portafolios 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Portafolios devuelve array', function () {",
+              "    const json = pm.response.json();",
+              "    pm.expect(json.status).to.eql('success');",
+              "    pm.expect(json.data).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/portafolios",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "portafolios"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
