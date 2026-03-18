@@ -4,20 +4,20 @@ Este documento describe cómo se han tenido en cuenta los riesgos del **OWASP To
 
 ---
 
-## 📋 Resumen ejecutivo
+##  Resumen ejecutivo
 
 | # | Riesgo OWASP | Estado | Medida principal |
 |---|-------------|--------|-----------------|
-| A01 | Broken Access Control | ✅ Mitigado | Decoradores `@login_required` / `@admin_required` |
-| A02 | Cryptographic Failures | ✅ Mitigado | bcrypt + secrets + variables de entorno |
-| A03 | Injection | ✅ Mitigado | SQL parametrizado en todas las consultas |
-| A04 | Insecure Design | ⚠️ Parcial | Roles, tokens — falta rate limiting |
-| A05 | Security Misconfiguration | ⚠️ Parcial | Talisman + CORS — falta hardening en producción |
-| A06 | Vulnerable Components | ✅ Mitigado | requirements.txt — escaneo automático |
-| A07 | Auth & Identification Failures | ✅ Mitigado | Login seguro, sesiones, cookies HttpOnly/SameSite |
-| A08 | Software & Data Integrity | ⚠️ Parcial | CI/CD con GitHub Actions — falta firmado de imágenes |
-| A09 | Security Logging & Monitoring | ⚠️ Parcial | Logs básicos — falta SIEM |
-| A10 | SSRF | ✅ N/A | No se realizan peticiones a URLs externas desde el usuario |
+| A01 | Broken Access Control | Mitigado | Decoradores `@login_required` / `@admin_required` |
+| A02 | Cryptographic Failures | Mitigado | bcrypt + secrets + variables de entorno |
+| A03 | Injection | Mitigado | SQL parametrizado en todas las consultas |
+| A04 | Insecure Design | Parcial | Roles, tokens — falta rate limiting |
+| A05 | Security Misconfiguration | Parcial | Talisman + CORS — falta hardening en producción |
+| A06 | Vulnerable Components | Mitigado | requirements.txt — escaneo automático |
+| A07 | Auth & Identification Failures | Mitigado | Login seguro, sesiones, cookies HttpOnly/SameSite |
+| A08 | Software & Data Integrity | Parcial | CI/CD con GitHub Actions — falta firmado de imágenes |
+| A09 | Security Logging & Monitoring |  Parcial | Logs básicos — falta SIEM |
+| A10 | SSRF | ✅N/A | No se realizan peticiones a URLs externas desde el usuario |
 
 ---
 
@@ -80,10 +80,10 @@ token = secrets.token_hex(32)  # 64 caracteres hex = 256 bits
 - No se usa `eval()` ni `exec()` en ninguna parte del código.
 
 ```python
-# ✅ Correcto — parametrizado
+# Correcto — parametrizado
 cur.execute("SELECT * FROM usuarios WHERE email = %s AND activo = 1", (email,))
 
-# ❌ Incorrecto — nunca se hace esto
+# Incorrecto — nunca se hace esto
 cur.execute(f"SELECT * FROM usuarios WHERE email = '{email}'")
 ```
 
@@ -244,7 +244,7 @@ El backend no consume APIs externas de terceros, por lo que este riesgo no aplic
 
 ---
 
-## 📌 Plan de mejora prioritario
+## Plan de mejora prioritario
 
 1. **Alta prioridad** — Añadir `Flask-Limiter` para rate limiting en `/api/login` y `/api/register`
 2. **Alta prioridad** — Activar `SESSION_COOKIE_SECURE=True` y `force_https=True` en producción
