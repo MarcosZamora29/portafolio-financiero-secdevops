@@ -120,7 +120,15 @@ docker compose down
 docker compose down -v
 
 # Para entrar usaremos admin@demo.com y contraseña admin123 y tendremos rol ADMIN
-<img width="487" height="32" alt="image" src="https://github.com/user-attachments/assets/083ebd52-bb59-419d-95d8-bdd525d14f12" />
++----+----------------------+-----------------------+-------+--------+
+| id | nombre               | email                 | rol   | activo |
++----+----------------------+-----------------------+-------+--------+
+|  1 | Usuario Demo         | demo@portafolio.com   | user  |      1 |
+|  6 | ADMIN                | admin@gmail.com       | user  |      1 |
+|  7 | Quico Alonso De Caso | quicoalonso@gmail.com | user  |      1 |
+|  8 | Usuario Test         | testuser@example.com  | user  |      1 |
+| 13 | Javier Trapero       | javitrap@gmail.com    | user  |      1 |
+| 14 | Admin Demo           | admin@demo.com        | admin |      1 |
 
 ```
 
