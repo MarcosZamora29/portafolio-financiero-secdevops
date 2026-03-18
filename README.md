@@ -118,6 +118,10 @@ docker compose down
 
 # Parar y eliminar contenedores + volúmenes (borra la BD)
 docker compose down -v
+
+# Para entrar usaremos admin@demo.com y contraseña admin123 y tendremos rol ADMIN
+<img width="487" height="32" alt="image" src="https://github.com/user-attachments/assets/083ebd52-bb59-419d-95d8-bdd525d14f12" />
+
 ```
 
 ### Verificar que todo funciona
