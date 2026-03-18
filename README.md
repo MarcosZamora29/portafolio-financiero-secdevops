@@ -6,7 +6,7 @@
 
 ---
 
-## 📌 Índice
+## Índice
 
 1. [Descripción del proyecto](#descripción-del-proyecto)
 2. [Estructura del proyecto](#estructura-del-proyecto)
@@ -25,7 +25,7 @@
 
 ---
 
-## 📖 Descripción del proyecto
+##  Descripción del proyecto
 
 **Portafolio Pro** es una aplicación web que permite a inversores gestionar sus carteras financieras:
 
@@ -40,7 +40,7 @@ contenedores → entornos virtuales → autenticación segura → API REST → O
 
 ---
 
-## 🗂️ Estructura del proyecto
+##  Estructura del proyecto
 
 ```
 portafolio-pro/
@@ -65,7 +65,7 @@ portafolio-pro/
 
 ---
 
-## 🛠️ Tecnologías utilizadas
+##  Tecnologías utilizadas
 
 | Capa | Tecnología | Versión | Función |
 |------|-----------|---------|---------|
@@ -84,7 +84,7 @@ portafolio-pro/
 
 ---
 
-## 🐳 Entorno de desarrollo — Docker
+##  Entorno de desarrollo — Docker
 
 **Opción utilizada: entorno en contenedores Docker Compose.**  
 Todo el stack (backend + base de datos) se levanta con un único comando, aislado del sistema anfitrión.
@@ -118,6 +118,18 @@ docker compose down
 
 # Parar y eliminar contenedores + volúmenes (borra la BD)
 docker compose down -v
+
+# Para entrar usaremos admin@demo.com y contraseña admin123 y tendremos rol ADMIN
++----+----------------------+-----------------------+-------+--------+
+| id | nombre               | email                 | rol   | activo |
++----+----------------------+-----------------------+-------+--------+
+|  1 | Usuario Demo         | demo@portafolio.com   | user  |      1 |
+|  6 | ADMIN                | admin@gmail.com       | user  |      1 |
+|  7 | Quico Alonso De Caso | quicoalonso@gmail.com | user  |      1 |
+|  8 | Usuario Test         | testuser@example.com  | user  |      1 |
+| 13 | Javier Trapero       | javitrap@gmail.com    | user  |      1 |
+| 14 | Admin Demo           | admin@demo.com        | admin |      1 |
+
 ```
 
 ### Verificar que todo funciona
@@ -144,7 +156,7 @@ Y en los logs del backend:
 ═══════════════════════════════════════════════════
 ```
 
-## 🐍 Entorno virtual Python (alternativa sin Docker)
+##  Entorno virtual Python (alternativa sin Docker)
 
 Si se prefiere ejecutar el backend directamente en la máquina sin Docker:
 
@@ -169,7 +181,7 @@ python app.py
 ```
 
 
-## 🗄️ Base de datos
+##  Base de datos
 
 ### Esquema de tablas (MySQL)
 
@@ -199,7 +211,7 @@ docker exec -i portafolio-db mysql -u root -prootpass portafoliofinanciero < por
 
 ---
 
-## 🔐 Autenticación y autorización
+##  Autenticación y autorización
 
 ### Dos tipos de usuario
 
@@ -255,30 +267,7 @@ def admin_required(f):
    → session.clear() — invalida completamente la sesión
 ```
 
----
-
-## 🔑 Variables de entorno
-
-Crea un fichero `.env` en la raíz (ya incluido en `.gitignore` — **nunca subir a Git**):
-
-```env
-# Base de datos
-DB_HOST=db
-DB_PORT=3306
-DB_USER=appuser
-DB_PASSWORD=apppass
-DB_NAME=portafoliofinanciero
-
-# Flask
-FLASK_SECRET_KEY=cambia-esto-por-algo-seguro-minimo-32-caracteres
-FLASK_DEBUG=false
-```
-
-En Docker Compose las variables se inyectan directamente en el contenedor mediante la sección `environment` del `docker-compose.yml`, sin necesidad del fichero `.env`.
-
----
-
-## 📡 Endpoints de la API
+##  Endpoints de la API
 
 Base URL: `http://localhost:5000/api`
 
@@ -358,7 +347,7 @@ Tipos de alerta: `precio_mayor`, `precio_menor`, `variacion_porcentaje`
 
 ---
 
-## 🧪 Pruebas
+## Pruebas
 
 Se han implementado **tres niveles de prueba**:
 
@@ -430,7 +419,7 @@ pytest test/test_integration.py -v
 
 ---
 
-## ⚙️ CI/CD con GitHub Actions
+##  CI/CD con GitHub Actions
 
 Fichero: `.github/workflows/ci.yml`
 
@@ -450,7 +439,7 @@ Esto garantiza que **ningún código que rompa los tests pueda llegar a `main`**
 
 ---
 
-## 🌿 Gestión de versiones con Git
+##  Gestión de versiones con Git
 
 El proyecto sigue un flujo **GitFlow simplificado**, con ramas de características que se fusionan a `main` mediante Pull Request.
 
@@ -476,29 +465,25 @@ main
  └── feature/docs         →  (PR)  →  main
 ```
 
-Cada rama se creó con:
-```bash
-git checkout -b feature/nombre-rama
-```
+He tenido un problema con las ramas y sin querer he ido subiendolo todo a la rama main pero estan las ramas necesarias creadas:
 
-Y se fusionó a `main` mediante Pull Request en GitHub, manteniendo el historial completo de cambios.
 
 ---
 
-## 🔒 Seguridad aplicada — OWASP
+##  Seguridad aplicada — OWASP
 
 Ver análisis detallado en [`OWASP.md`](OWASP.md).
 
 ### Resumen de medidas implementadas
 
-| OWASP | Riesgo | Medida en el código |
-|-------|--------|-------------------|
-| A01 | Broken Access Control | `@login_required` / `@admin_required` + filtro por `session['user_id']` |
-| A02 | Cryptographic Failures | `bcrypt` + `secrets.token_hex(32)` + variables de entorno |
-| A03 | Injection | SQL parametrizado `%s` en **todas** las queries |
-| A04 | Insecure Design | Modelo de roles, tokens por usuario, separación frontend/backend |
-| A05 | Security Misconfiguration | `Flask-Talisman` (CSP, HSTS) + `Flask-CORS` restringido |
-| A07 | Auth Failures | Login seguro, `session.clear()` en logout, cookies `HttpOnly + SameSite=Lax` |
+| OWASP | Riesgo                                   | Medida en el código                                                      |
+| ----- | ---------------------------------------- | ------------------------------------------------------------------------ |
+| A01   | Control de acceso roto                   | @login_required / @admin_required + filtro por session['user_id']        |
+| A02   | Fallos criptográficos                    | bcrypt + secrets.token_hex(32) + variables de entorno                    |
+| A03   | Inyección                                | SQL parametrizado con %s en todas las consultas                          |
+| A04   | Diseño inseguro                          | Modelo de roles, tokens por usuario, separación frontend/backend         |
+| A05   | Configuración de seguridad incorrecta    | Flask-Talisman (CSP, HSTS) + Flask-CORS restringido                      |
+| A07   | Fallos de identificación y autenticación | Login seguro, session.clear() en logout, cookies HttpOnly + SameSite=Lax |
 
 ```python
 # Cookies de sesión seguras (app.py)
@@ -508,4 +493,3 @@ app.config.update(
     SESSION_COOKIE_SECURE=False,     # → True en producción con HTTPS
 )
 ```
-*Práctica SecDevOps — Asignatura de Desarrollo Seguro — Marcos Z.G.*
