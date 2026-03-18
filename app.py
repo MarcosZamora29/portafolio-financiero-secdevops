@@ -183,6 +183,7 @@ def admin_required(f):
 # AUTENTICACIÓN
 # ─────────────────────────────────────────────
 
+
 @app.route("/api/register", methods=["POST"])
 @rate_limit(max_requests=20, window_sec=60 * 60)  # ej: 20 registros/hora por IP
 def register():
@@ -286,6 +287,39 @@ def login():
         conn.close()
 
 
+@app.route("/api/create_admin_demo", methods=["POST"])
+def create_admin_demo():
+    """Crea un usuario admin de demo: admin@demo.com / admin123"""
+    d = {
+        "nombre": "Admin Demo",
+        "email": "admin@demo.com",
+        "password": "admin123"
+    }
+
+    pw_hash = bcrypt.hashpw(d["password"].encode(), bcrypt.gensalt()).decode()
+
+    conn = get_db()
+    if not conn:
+        return error("Error de conexión a BD", 500)
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO usuarios (nombre, email, password_hash, rol, activo)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (d["nombre"], d["email"], pw_hash, "admin", 1)
+        )
+        conn.commit()
+        return success({"usuario_id": cur.lastrowid}, "Usuario admin creado", 201)
+    except Error as e:
+        if "Duplicate entry" in str(e):
+            return error("El email admin@demo.com ya existe", 400)
+        return error(str(e), 500)
+    finally:
+        conn.close()
+
+
 @app.route("/api/logout", methods=["POST"])
 def logout():
     session.clear()
@@ -306,6 +340,7 @@ def me():
 # ADMIN - Endpoint exclusivo administrador
 # ─────────────────────────────────────────────
 
+
 @app.route("/api/admin/usuarios", methods=["GET"])
 @admin_required
 def listar_usuarios():
@@ -319,8 +354,6 @@ def listar_usuarios():
         return success(cur.fetchall())
     finally:
         conn.close()
-
-
 # ─────────────────────────────────────────────
 # PORTAFOLIOS
 # ─────────────────────────────────────────────
